@@ -1,0 +1,169 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Insights Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        canvas {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>E-Commerce Insights Dashboard</h1>
+    <div class="dashboard">
+        <div class="chart-container">
+            <h2>Top-Selling Products</h2>
+            <canvas id="topProductsChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>Peak Sales Hours</h2>
+            <canvas id="peakHoursChart"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>User Retention Over Time</h2>
+            <canvas id="retentionChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Sample data (replace with actual dataset integration)
+        const productsData = [
+            { name: 'Laptop', quantity: 150 },
+            { name: 'Smartphone', quantity: 120 },
+            { name: 'Headphones', quantity: 80 },
+            { name: 'Tablet', quantity: 50 },
+            { name: 'Smartwatch', quantity: 30 }
+        ];
+
+        const hoursData = {
+            labels: ['8 AM', '10 AM', '12 PM', '2 PM', '4 PM', '6 PM', '8 PM', '10 PM'],
+            sales: [20, 50, 80, 120, 100, 150, 200, 90]
+        };
+
+        const retentionData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            retention: [80, 75, 70, 65, 70, 72]
+        };
+        new Chart(document.getElementById('topProductsChart'), {
+            type: 'bar',
+            data: {
+                labels: productsData.map(p => p.name),
+                datasets: [{
+                    label: 'Units Sold',
+                    data: productsData.map(p => p.quantity),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Top 5 Products by Sales' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Units Sold' } }
+                }
+            }
+        });
+        new Chart(document.getElementById('peakHoursChart'), {
+            type: 'line',
+            data: {
+                labels: hoursData.labels,
+                datasets: [{
+                    label: 'Sales Volume',
+                    data: hoursData.sales,
+                    borderColor: '#36A2EB',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Sales by Hour' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Sales Volume' } },
+                    x: { title: { display: true, text: 'Time of Day' } }
+                }
+            }
+        });
+        new Chart(document.getElementById('retentionChart'), {
+            type: 'pie',
+            data: {
+                labels: retentionData.labels,
+                datasets: [{
+                    label: 'Retention Rate',
+                    data: retentionData.retention,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: { display: true, text: 'Monthly User Retention' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
